@@ -172,6 +172,40 @@ async def api_tags() -> JSONResponse:
     })
 
 
+@app.post("/api/show")
+async def api_show(request: Request) -> JSONResponse:
+    """Ollama ``/api/show`` endpoint -- model metadata.
+
+    Some clients call this at startup to verify model availability.
+    Returns minimal metadata for any model that has a configured route.
+    If no route matches, returns 404 (model not found).
+    """
+    body = await request.json()
+    model = body.get("name", body.get("model", ""))
+
+    router = _get_router()
+    route = router.config.route_for(model)
+    if not route:
+        return JSONResponse(
+            {"error": f"model '{model}' not found"},
+            status_code=404,
+        )
+
+    return JSONResponse({
+        "modelfile": "",
+        "parameters": "",
+        "template": "",
+        "details": {
+            "parent_model": "",
+            "format": "",
+            "family": route.backend,
+            "parameter_size": "",
+            "quantization_level": "",
+        },
+        "model_info": {},
+    })
+
+
 @app.get("/health")
 async def health() -> JSONResponse:
     """Health check endpoint."""
