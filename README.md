@@ -132,6 +132,12 @@ docker run -p 11434:11434 -v ./elsegate.yaml:/app/elsegate.yaml \
   -e MISTRAL_API_KEY=your-key elsegate
 ```
 
+## Documentation
+
+- **[Configuration Reference](docs/configuration.md)** -- all settings, all backends, all parameters
+- **[Docker Deployment](docs/docker.md)** -- Docker Compose, `.env` files, health checks
+- **[examples/elsegate.yaml](examples/elsegate.yaml)** -- annotated example config
+
 ## Design
 
 - **Strategy Pattern** for backends -- new providers require only a new class, no changes to routing or server.
