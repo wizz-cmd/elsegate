@@ -1,5 +1,7 @@
 # Elsegate
 
+> **Early alpha. Use at your own risk.** Tested with Mistral API and Claude Code CLI only. Other OpenAI-compatible providers (OpenAI, Groq, Together, etc.) should work via `openai_compat` but are untested.
+
 Ollama-compatible LLM gateway. Route requests to multiple backends through a single API endpoint.
 
 ```
@@ -10,11 +12,12 @@ Client (any Ollama-compatible app)
 │  Elsegate                        │
 │  model name → backend            │
 │                                  │
-│  gpt-4o        → OpenAI API     │
-│  mistral-embed → Mistral API    │
-│  claude-opus   → Claude Code CLI│
-│  llama3:8b     → local Ollama   │
+│  mistral-embed → Mistral API  ✓ │
+│  claude-opus   → Claude Code  ✓ │
+│  gpt-4o        → OpenAI API  ? │
+│  llama3:8b     → local Ollama ? │
 └──────────────────────────────────┘
+  ✓ = tested    ? = should work, untested
 ```
 
 ## Why
@@ -26,7 +29,9 @@ Client (any Ollama-compatible app)
 ## Quick Start
 
 ```bash
-pip install elsegate
+git clone https://github.com/wizz-cmd/elsegate.git
+cd elsegate
+pip install -e .
 ```
 
 Create `elsegate.yaml`:
@@ -53,7 +58,7 @@ routes:
 
 ```bash
 export MISTRAL_API_KEY=your-key
-elsegate  # or: uvicorn elsegate.server:app --port 11434
+uvicorn elsegate.server:app --port 11434
 ```
 
 Now any Ollama client can use `mistral-embed` for embeddings and `claude-opus` for chat, transparently.
@@ -62,7 +67,7 @@ Now any Ollama client can use `mistral-embed` for embeddings and `claude-opus` f
 
 ### `openai_compat`
 
-Routes to any OpenAI-compatible API. Works with Mistral, OpenAI, Groq, Together, Fireworks, and others.
+Routes to any OpenAI-compatible API. Tested with Mistral. Should work with OpenAI, Groq, Together, Fireworks, and others (untested).
 
 ```yaml
 my-model:
@@ -100,7 +105,7 @@ Supports: `/api/generate`, `/api/chat`. Does **not** support `/api/embed`.
 
 ### `ollama_passthru`
 
-Forwards requests unchanged to a real Ollama instance. Use as the wildcard fallback for local models.
+Forwards requests unchanged to a real Ollama instance. Use as the wildcard fallback for local models. Untested -- included for completeness.
 
 ```yaml
 "*":
@@ -137,6 +142,23 @@ docker run -p 11434:11434 -v ./elsegate.yaml:/app/elsegate.yaml \
 
 - Python 3.11+
 - For `claude_code` backend: [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
+
+## Status
+
+**Early alpha (v0.1.0).** This project scratches a specific itch and is shared as-is.
+
+Tested:
+- `openai_compat` backend with Mistral API (embeddings + chat)
+- `claude_code` backend with Claude Code CLI v2.1.92 (chat + native tool execution)
+
+Not tested:
+- `openai_compat` with OpenAI, Groq, Together, or other providers
+- `ollama_passthru` backend
+- Streaming (`"stream": true` is silently ignored)
+- High concurrency
+- Production hardening
+
+Contributions and bug reports welcome.
 
 ## License
 
