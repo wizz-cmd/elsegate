@@ -1,0 +1,38 @@
+# Elsegate configuration example.
+#
+# Routes map model names to backends. When a client sends a request with
+# {"model": "mistral-embed"}, Elsegate looks up the matching route and
+# forwards the request to the configured backend.
+
+server:
+  host: 0.0.0.0
+  port: 11434              # Ollama-standard port
+
+routes:
+  # Route embedding requests to Mistral API
+  mistral-embed:
+    backend: openai_compat
+    provider_url: https://api.mistral.ai/v1
+    provider_model: mistral-embed
+    api_key_env: MISTRAL_API_KEY       # reads from environment variable
+
+  # Route chat requests to Mistral
+  mistral-small-latest:
+    backend: openai_compat
+    provider_url: https://api.mistral.ai/v1
+    provider_model: mistral-small-latest
+    api_key_env: MISTRAL_API_KEY
+
+  # Route to Claude Code CLI (requires `claude` in PATH, authenticated)
+  claude-opus:
+    backend: claude_code
+    cli_path: claude               # or full path: /usr/local/bin/claude
+    max_turns: 50
+    work_dir: /tmp/elsegate-work   # working directory for Claude Code
+    timeout: 300                   # seconds
+    stateless: true                # fresh session per request
+
+  # Fallback: forward to a local Ollama instance
+  "*":
+    backend: ollama_passthru
+    ollama_url: http://localhost:11434
