@@ -201,23 +201,28 @@ class ClaudeCodeBackend:
                 else:
                     cmd.extend(["--resume", self._session_id])
 
-            cmd.extend(["-p", prompt])
+            # Pass prompt via stdin to avoid ARG_MAX limits.
+            # OpenClaw sends full context (SOUL.md + tools + memory) which
+            # can exceed Linux's ~2MB command-line argument limit.
+            cmd.extend(["-p", "-"])
 
             log.info(
-                "Invoking Claude Code (stateless=%s, attempt=%d)",
-                self._stateless, attempt + 1,
+                "Invoking Claude Code (stateless=%s, attempt=%d, prompt=%dB)",
+                self._stateless, attempt + 1, len(prompt.encode("utf-8")),
             )
 
             try:
                 proc = await asyncio.create_subprocess_exec(
                     *cmd,
+                    stdin=asyncio.subprocess.PIPE,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     cwd=self._work_dir,
                 )
                 try:
                     stdout, stderr = await asyncio.wait_for(
-                        proc.communicate(), timeout=self._timeout
+                        proc.communicate(input=prompt.encode("utf-8")),
+                        timeout=self._timeout,
                     )
                 except asyncio.TimeoutError:
                     log.error("Claude Code timed out after %ds", self._timeout)
