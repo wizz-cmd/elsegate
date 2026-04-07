@@ -85,7 +85,13 @@ class ElsegateConfig:
     def route_for(self, model: str) -> RouteConfig | None:
         """Find the route config for a model name.
 
-        Checks exact match first, then wildcard ``*``.
+        Resolution order:
+        1. Exact match (``mistral-small-latest``)
+        2. Strip provider prefix (``elsegate/mistral-small-latest`` → ``mistral-small-latest``)
+        3. Wildcard (``*``)
+
+        Some clients (e.g. OpenClaw) prefix the model name with the
+        provider name (``provider/model``). Step 2 handles this transparently.
 
         Args:
             model: The model name from the Ollama request.
@@ -93,8 +99,15 @@ class ElsegateConfig:
         Returns:
             Matching :class:`RouteConfig`, or ``None`` if no route matches.
         """
+        # 1. Exact match
         if model in self.routes:
             return self.routes[model]
+        # 2. Strip provider prefix (e.g. "elsegate/claude-opus" → "claude-opus")
+        if "/" in model:
+            stripped = model.split("/", 1)[1]
+            if stripped in self.routes:
+                return self.routes[stripped]
+        # 3. Wildcard
         if "*" in self.routes:
             return self.routes["*"]
         return None
