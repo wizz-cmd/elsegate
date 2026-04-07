@@ -146,6 +146,7 @@ docker run -p 11434:11434 -v ./elsegate.yaml:/app/elsegate.yaml \
 - **[Configuration Reference](docs/configuration.md)** -- all settings, all backends, all parameters
 - **[systemd Deployment](docs/systemd.md)** -- production setup with automatic restarts, secrets, logging
 - **[Docker Deployment](docs/docker.md)** -- Docker Compose, `.env` files, health checks
+- **[Tailscale SSH Guide](docs/tailscale-ssh.md)** -- remote Claude Code via Tailscale SSH (ACL setup, Docker socket sharing, troubleshooting)
 - **[examples/elsegate.yaml](examples/elsegate.yaml)** -- annotated example config
 
 ## Design
@@ -166,6 +167,9 @@ docker run -p 11434:11434 -v ./elsegate.yaml:/app/elsegate.yaml \
 Tested:
 - `openai_compat` backend with Mistral API (embeddings + chat)
 - `claude_code` backend with Claude Code CLI v2.1.92 (chat + native tool execution)
+- `claude_code` backend via Tailscale SSH to a remote host
+- Tool definitions converted to prompt context (caller sends `tools`, Claude Code executes natively)
+- Prompt via stdin (no ARG_MAX limit)
 
 Not tested:
 - `openai_compat` with OpenAI, Groq, Together, or other providers
