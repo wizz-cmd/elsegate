@@ -31,8 +31,11 @@ Client (any Ollama-compatible app)
 ```bash
 git clone https://github.com/wizz-cmd/elsegate.git
 cd elsegate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 ```
+
+See [INSTALLATION.md](INSTALLATION.md) for detailed setup including systemd and Docker.
 
 Create `elsegate.yaml`:
 
@@ -139,7 +142,9 @@ docker run -p 11434:11434 -v ./elsegate.yaml:/app/elsegate.yaml \
 
 ## Documentation
 
+- **[INSTALLATION.md](INSTALLATION.md)** -- setup from source, first run, upgrading
 - **[Configuration Reference](docs/configuration.md)** -- all settings, all backends, all parameters
+- **[systemd Deployment](docs/systemd.md)** -- production setup with automatic restarts, secrets, logging
 - **[Docker Deployment](docs/docker.md)** -- Docker Compose, `.env` files, health checks
 - **[examples/elsegate.yaml](examples/elsegate.yaml)** -- annotated example config
 
