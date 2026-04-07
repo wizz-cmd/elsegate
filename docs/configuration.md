@@ -136,6 +136,30 @@ Note: If no `api_key_env` is specified, no `Authorization` header is sent.
 
 ---
 
+## Provider Naming Caveat
+
+Some Ollama clients (notably OpenClaw) register API protocol handlers by **provider name**, not by API type. If your client expects a provider named `ollama`, you must name your Elsegate provider `ollama` in the client config -- even though Elsegate is not Ollama.
+
+Example: OpenClaw requires the provider to be named `ollama` for the Ollama API handler to activate:
+
+```json
+{
+  "models": {
+    "providers": {
+      "ollama": {
+        "baseUrl": "http://elsegate-host:11434",
+        "apiKey": "not-needed",
+        "api": "ollama"
+      }
+    }
+  }
+}
+```
+
+Using a custom provider name like `elsegate` with `"api": "ollama"` will fail with `"No API provider registered for api: ollama"` in such clients. This is a client-side limitation, not an Elsegate issue.
+
+---
+
 ## Backend: `claude_code`
 
 Wraps [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) as an Ollama-compatible endpoint. Claude Code executes tools natively (web search, shell, file I/O, etc.) and returns the final result.

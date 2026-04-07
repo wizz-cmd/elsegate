@@ -155,6 +155,12 @@ docker run -p 11434:11434 -v ./elsegate.yaml:/app/elsegate.yaml \
 - **Router Pattern** for dispatch -- model name in the request determines the backend, configured via YAML.
 - ~400 lines of Python. No framework beyond FastAPI.
 
+## Gotchas
+
+**Provider naming:** Some Ollama clients require the provider to be named `ollama` for the Ollama API handler to activate. If your client shows "No API provider registered for api: ollama", rename the Elsegate provider to `ollama` in your client config. See [docs/configuration.md](docs/configuration.md#provider-naming-caveat) for details.
+
+**Prompt size:** Elsegate passes prompts via stdin to avoid Linux ARG_MAX limits. Prompts up to the model's context window are supported.
+
 ## Requirements
 
 - Python 3.11+
