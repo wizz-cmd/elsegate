@@ -84,12 +84,17 @@ Supports: `/api/embed`, `/api/embeddings`, `/api/generate`, `/api/chat`.
 Wraps [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) as an Ollama-compatible endpoint. Claude Code executes tools natively (web search, shell, file I/O) and returns the final result.
 
 ```yaml
+# Local Claude Code (installed and authenticated on this machine)
 claude-opus:
   backend: claude_code
-  cli_path: claude          # must be installed and authenticated
-  max_turns: 50
-  timeout: 300
-  stateless: true           # fresh session per request (default)
+  cli_path: claude
+  stateless: true
+
+# Or: remote Claude Code via SSH (authenticated on another machine)
+claude-remote:
+  backend: claude_code
+  cli_command: ["ssh", "ai-server", "claude"]
+  stateless: true
 ```
 
 Supports: `/api/generate`, `/api/chat`. Does **not** support `/api/embed`.

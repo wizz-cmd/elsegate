@@ -71,29 +71,53 @@ This keeps secrets out of config files and version control.
 
 ## Claude Code Backend in Docker
 
-The `claude_code` backend requires the Claude Code CLI inside the container. The provided Dockerfile installs it via npm:
+The `claude_code` backend needs access to an **authenticated** Claude Code CLI. Claude Code authenticates via OAuth or API key -- the credentials are stored in `~/.claude/` on the machine where `claude login` was run.
 
-```dockerfile
-RUN npm install -g @anthropic-ai/claude-code
+In a Docker deployment, there are several ways to handle this:
+
+### Option A: Don't use Claude Code in Docker (simplest)
+
+If you only need `openai_compat` routes (embeddings, chat via Mistral/OpenAI), the Docker image works out of the box. Skip the `claude_code` route in your config.
+
+If you also need Claude Code, run Elsegate directly on the host where `claude` is authenticated (as a systemd service or in a shell), not in Docker.
+
+### Option B: Reach a remote Claude Code via SSH
+
+If Claude Code is authenticated on a different machine, use `cli_command` in your config to call it via SSH. Elsegate runs in Docker, Claude Code runs elsewhere:
+
+```yaml
+# elsegate.yaml
+claude-opus:
+  backend: claude_code
+  cli_command: ["ssh", "ai-server.local", "claude"]
+  stateless: true
 ```
 
-However, Claude Code CLI must be **authenticated**. In Docker, this means either:
+The Docker container only needs SSH client access to the target host. No Claude Code installation needed in the container.
 
-1. **Mount the auth config** from the host:
-   ```yaml
-   volumes:
-     - ~/.claude:/root/.claude:ro
-   ```
+### Option C: Mount host credentials into the container
 
-2. **Set `ANTHROPIC_API_KEY`** in the environment:
-   ```yaml
-   environment:
-     - ANTHROPIC_API_KEY=your-key
-   ```
+Mount `~/.claude/` from the host into the container:
 
-3. **Run the `claude_code` backend on the host** instead of in Docker (recommended if Claude Code is already authenticated on the host).
+```yaml
+# docker-compose.yml
+volumes:
+  - ~/.claude:/root/.claude:ro
+```
 
-Option 3 is simplest: run Elsegate directly on the host where `claude` is authenticated, and use Docker only for deployments that don't need the `claude_code` backend.
+This shares the host's authentication with the container. Claude Code CLI must also be installed in the container (the Dockerfile handles this).
+
+### Option D: API key in environment
+
+Set `ANTHROPIC_API_KEY` in the container's environment:
+
+```yaml
+# docker-compose.yml
+environment:
+  - ANTHROPIC_API_KEY=your-key
+```
+
+This bypasses OAuth and authenticates directly. Claude Code CLI must be installed in the container.
 
 ## Health Check
 

@@ -35,7 +35,11 @@ class ClaudeCodeBackend:
     Args:
         params: Route params from config. Expected keys:
 
-            - ``cli_path``: Path to ``claude`` binary (default: ``claude``)
+            - ``cli_command``: Full command as list, e.g.
+              ``["ssh", "my-server", "claude"]`` for remote execution.
+              Takes precedence over ``cli_path``.
+            - ``cli_path``: Path to ``claude`` binary (default: ``claude``).
+              Ignored if ``cli_command`` is set.
             - ``max_turns``: Max tool-use turns per invocation (default: 50)
             - ``work_dir``: Working directory for Claude Code (default: ``.``)
             - ``timeout``: Max seconds per invocation (default: 300)
@@ -43,6 +47,7 @@ class ClaudeCodeBackend:
     """
 
     def __init__(self, params: dict[str, Any]):
+        self._cli_command = params.get("cli_command")  # e.g. ["ssh", "host", "claude"]
         self._cli_path = params.get("cli_path", "claude")
         self._max_turns = str(params.get("max_turns", 50))
         self._work_dir = params.get("work_dir", ".")
@@ -183,8 +188,15 @@ class ClaudeCodeBackend:
             Claude's response text, or an error message.
         """
         for attempt in range(2):
-            cmd = [
-                self._cli_path,
+            # Build the base command. cli_command (list) takes precedence
+            # over cli_path (string) to support remote execution via SSH
+            # without wrapper scripts.
+            if self._cli_command:
+                base = list(self._cli_command)
+            else:
+                base = [self._cli_path]
+
+            cmd = base + [
                 "--print",
                 "--output-format", "json",
                 "--dangerously-skip-permissions",

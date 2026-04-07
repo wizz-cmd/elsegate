@@ -23,7 +23,8 @@ routes:
     provider_model: mistral-small-latest
     api_key_env: MISTRAL_API_KEY
 
-  # Route to Claude Code CLI (requires `claude` in PATH, authenticated)
+  # Route to Claude Code CLI (requires `claude` authenticated)
+  # Option 1: local binary
   claude-opus:
     backend: claude_code
     cli_path: claude               # or full path: /usr/local/bin/claude
@@ -31,6 +32,13 @@ routes:
     work_dir: /tmp/elsegate-work   # working directory for Claude Code
     timeout: 300                   # seconds
     stateless: true                # fresh session per request
+
+  # Option 2: remote Claude Code via SSH (uncomment to use instead)
+  # claude-opus:
+  #   backend: claude_code
+  #   cli_command: ["ssh", "ai-server.local", "claude"]
+  #   timeout: 600
+  #   stateless: true
 
   # Fallback: forward to a local Ollama instance
   "*":

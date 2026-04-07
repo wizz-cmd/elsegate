@@ -138,23 +138,78 @@ Note: If no `api_key_env` is specified, no `Authorization` header is sent.
 
 ## Backend: `claude_code`
 
-Wraps [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) as an Ollama-compatible endpoint.
+Wraps [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) as an Ollama-compatible endpoint. Claude Code executes tools natively (web search, shell, file I/O, etc.) and returns the final result.
 
 ### Prerequisites
 
-- Claude Code CLI must be installed (`npm install -g @anthropic-ai/claude-code`)
-- Claude Code must be authenticated (`claude` login, or active session)
-- The `claude` binary must be in PATH (or specify `cli_path`)
+- Claude Code CLI must be installed and **authenticated** on the machine where it runs
+- Authentication: `claude login` (interactive), OAuth, or `ANTHROPIC_API_KEY` env var
+- The `claude` binary must be in PATH, or specify its location via `cli_path` / `cli_command`
 
 ### Parameters
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `cli_path` | No | `claude` | Path to the `claude` binary |
+| `cli_command` | No | — | Full command as list (e.g. `["ssh", "host", "claude"]`). Takes precedence over `cli_path`. |
+| `cli_path` | No | `claude` | Path to the `claude` binary. Ignored if `cli_command` is set. |
 | `max_turns` | No | 50 | Maximum tool-use turns per invocation |
 | `work_dir` | No | `.` | Working directory for Claude Code |
 | `timeout` | No | 300 | Max seconds per invocation |
 | `stateless` | No | `true` | Fresh session per request (recommended) |
+
+### Where Claude Code Runs
+
+Claude Code CLI must be **authenticated** -- it needs an active login session or API key. Elsegate does not handle authentication; it calls `claude` as a subprocess and expects it to work.
+
+There are three common setups:
+
+**Local: Claude Code on the same machine as Elsegate**
+
+The simplest case. Claude Code is installed and authenticated on the machine where Elsegate runs.
+
+```yaml
+claude-opus:
+  backend: claude_code
+  cli_path: claude             # or /usr/local/bin/claude
+  stateless: true
+```
+
+**Remote: Claude Code on a different machine (via SSH)**
+
+If Claude Code is authenticated on another server (e.g. a dedicated AI workstation, a VM with an existing login), Elsegate can reach it via SSH. Use `cli_command` to specify the full command:
+
+```yaml
+claude-opus:
+  backend: claude_code
+  cli_command: ["ssh", "ai-server.local", "claude"]
+  stateless: true
+```
+
+This is useful when:
+- Claude Code is already authenticated on a different machine and you don't want to set up a second login
+- The machine running Elsegate doesn't have Claude Code installed
+- You want to keep Claude Code sessions on a specific host
+
+Requirements: passwordless SSH (key-based auth) from the Elsegate host to the remote.
+
+**Docker: Claude Code outside the container**
+
+If Elsegate runs in Docker but Claude Code is authenticated on the host, use `cli_command` to SSH back to the host (or use Docker's host networking):
+
+```yaml
+claude-opus:
+  backend: claude_code
+  cli_command: ["ssh", "host.docker.internal", "claude"]
+  stateless: true
+```
+
+Or mount the host's Claude auth config into the container (less recommended):
+
+```yaml
+# docker-compose.yml
+volumes:
+  - ~/.claude:/root/.claude:ro
+```
 
 ### Session Modes
 
@@ -186,15 +241,36 @@ If the caller includes `tools` in the request body, Elsegate converts them to pr
 
 This means: Claude Code is the tool executor, not the caller.
 
-### Example
+### Examples
+
+**Minimal (local Claude Code):**
 
 ```yaml
 claude-opus:
   backend: claude_code
-  cli_path: /usr/local/bin/claude
+  stateless: true
+```
+
+**Full options (local):**
+
+```yaml
+claude-opus:
+  backend: claude_code
+  cli_path: /home/user/.local/bin/claude
   max_turns: 50
   work_dir: /opt/elsegate/workdir
   timeout: 300
+  stateless: true
+```
+
+**Remote via SSH:**
+
+```yaml
+claude-opus:
+  backend: claude_code
+  cli_command: ["ssh", "ai-server", "claude"]
+  max_turns: 50
+  timeout: 600                  # longer timeout for network latency
   stateless: true
 ```
 
